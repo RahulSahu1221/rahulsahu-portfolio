@@ -1,0 +1,168 @@
+/* ==========================================================================
+   PROJECT TABS
+   ========================================================================== */
+/* iOS-style segmented control: a single sliding indicator behind the
+   active label, not an instant background swap on each tab. */
+.project-tabs { position: relative; display: inline-flex; gap: 2px; padding: 4px; border-radius: 999px; margin-bottom: 40px; }
+.project-tab {
+  position: relative; z-index: 2;
+  padding: 9px 22px; border-radius: 999px; border: none; background: none;
+  font-family: var(--font-ui); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); cursor: none; transition: color 0.35s var(--ease-glass);
+}
+.project-tab.active { color: var(--bg); font-weight: 600; }
+.project-tab-indicator {
+  position: absolute; top: 4px; left: 0; height: calc(100% - 8px);
+  width: var(--tab-w, 0px);
+  transform: translateX(var(--tab-x, 0px));
+  background: var(--accent);
+  border-radius: 999px;
+  transition: transform 0.5s var(--ease-spring), width 0.5s var(--ease-spring);
+  z-index: 1;
+}
+.project-panel { display: none; }
+.project-panel.active { display: block; }
+
+/* ==========================================================================
+   CERTIFICATE MODAL
+   ========================================================================== */
+#certModal {
+  position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+  opacity: 0; transition: opacity 0.25s ease; padding: 40px;
+}
+#certModal.open { opacity: 1; }
+#certModal img { max-width: 90%; max-height: 85vh; border-radius: 16px; box-shadow: 0 30px 80px rgba(0,0,0,0.6); transform: scale(0.96); transition: transform 0.25s var(--ease-spring); cursor: none; }
+#certModal.open img { transform: scale(1); }
+#certModal img.zoomed { transform: scale(1.7); cursor: none; }
+#closeModal {
+  position: absolute; top: 28px; right: 36px; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; cursor: none;
+  /* Now a real <button> (see BUG FIX comment in index.html) — reset the
+     native button chrome so it still looks exactly like it did as a span. */
+  background: none; border: none; appearance: none; -webkit-appearance: none; font-family: inherit;
+}
+.cert-modal-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+  color: #fff; font-size: 26px; cursor: none;
+  transition: background 0.25s ease, transform 0.25s var(--ease-spring);
+}
+.cert-modal-nav:hover { background: rgba(255,255,255,0.18); transform: translateY(-50%) scale(1.08); }
+.cert-modal-nav:not(.cert-modal-next) { left: 24px; }
+.cert-modal-next { right: 24px; }
+@media (max-width: 640px) { .cert-modal-nav { width: 38px; height: 38px; font-size: 20px; } }
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 640px) {
+  .dock-brand { display: none; }
+  .hero-eyebrow { font-size: 12px; }
+  .hero-cta { flex-direction: column; align-items: stretch; }
+  .btn-primary, .btn-outline { justify-content: center; }
+  .contact-links { grid-template-columns: 1fr; }
+  .cmdk-trigger-hint { display: none; }
+  section { padding: 80px 18px; }
+  /* .bento-tile mobile padding is handled in features.css's own
+     breakpoint, alongside the rest of the bento grid's mobile collapse. */
+}
+
+@media (max-width: 400px) {
+  .hero-name { font-size: 48px; }
+  .section-title { font-size: 34px; }
+}
+
+/* ---------- Safe-area support for notched phones ---------- */
+.dock-wrap { top: calc(18px + env(safe-area-inset-top)); }
+.dock-wrap.condensed { top: calc(12px + env(safe-area-inset-top)); }
+footer, section { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
+
+/* ---------- Landscape phones: hero shouldn't force a full 100vh scroll ---------- */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hero { min-height: auto; grid-template-columns: 1fr 0.8fr; }
+  .hero-left { padding: 90px 40px 40px; }
+  .hero-right { height: auto; }
+  .scroll-indicator { display: none; }
+}
+
+/* ---------- Ultra-compact dock for very small screens ---------- */
+@media (max-width: 380px) {
+  .dock-wrap { padding: 6px 8px; gap: 2px; }
+  .dock-links a { padding: 8px 9px; }
+  .lang-switch-btn span { display: none; }
+  .cmdk-trigger-hint { display: none; }
+}
+
+/* ---------- New elements from the latest revision pass ---------- */
+@media (max-width: 480px) {
+  .section-spatial > .section-label::after { display: none; } /* editorial numbering: too tight on very small screens */
+  #gpa-sparkline { width: 52px; }
+}
+@media (max-width: 640px) {
+  .contact-link { padding: 22px 24px; }
+  .edu-card { padding: 22px 22px; }
+  .contact-links { grid-template-columns: 1fr; }
+}
+/* NOTE (bug audit): the .thread-line media query that used to be here
+   targeted CSS that has been removed (see components.css) — it was dead
+   weight referencing a class no longer used anywhere in the HTML. */
+
+/* ==========================================================================
+   SIMPLE / RECRUITER MODE — overrides
+   html[data-mode="simple"] is the default view (see the inline script at
+   the top of <head> in index.html, and the MODE engine in core.js).
+   This block is loaded last on purpose, so it reliably wins the cascade.
+   It does three things:
+   1) Hides every element that effects.js/features.js already skips
+      initializing in this mode — so nothing is left stranded on screen
+      with no JS driving it (e.g. a cursor dot stuck at 0,0).
+   2) Restores the normal OS pointer everywhere. The custom-cursor system
+      sets `cursor: none` in about 20 different places across 4 CSS
+      files — rather than hunting down every single one (easy to miss
+      one and leave a dead spot with no visible cursor), this one
+      !important rule overrides all of them at once.
+   3) Replaces the WebGL/canvas background with a plain static gradient
+      built from the site's own existing color tokens — no new colors.
+   ========================================================================== */
+html[data-mode="simple"] #ambient-canvas,
+html[data-mode="simple"] #star-canvas,
+html[data-mode="simple"] #glass-blob-layer,
+html[data-mode="simple"] #energy-flow-line,
+html[data-mode="simple"] #theme-transition-veil,
+html[data-mode="simple"] .cursor,
+html[data-mode="simple"] .cursor-ring {
+  display: none !important;
+}
+
+html[data-mode="simple"] body,
+html[data-mode="simple"] body * {
+  cursor: auto !important;
+}
+html[data-mode="simple"] a,
+html[data-mode="simple"] button,
+html[data-mode="simple"] [role="button"],
+html[data-mode="simple"] summary {
+  cursor: pointer !important;
+}
+
+html[data-mode="simple"] body {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(var(--accent-rgb), 0.06), transparent),
+    var(--bg);
+}
+
+/* ---------- Navigation dock: fit on small laptops / tablets (861–1240px) ----------
+   The dock is ~1200px wide with its brand name, clock and 7 links, so it was
+   clipped on both sides at ~1024px. Drop the two least essential parts and
+   tighten the link spacing in that range; nothing is removed on larger screens. */
+@media (min-width: 861px) and (max-width: 1240px) {
+  .dock-brand-text, .dock-telemetry { display: none; }
+  .dock-links a { padding: 9px 11px; letter-spacing: 0.9px; }
+}
+@media (min-width: 861px) and (max-width: 1000px) {
+  .dock-links a { padding: 9px 8px; letter-spacing: 0.3px; gap: 4px; }
+  .dock-actions { gap: 2px; padding-left: 4px; margin-left: 2px; }
+}

@@ -1,0 +1,678 @@
+/* ==========================================================================
+   COMPONENTS.CSS — animation engine, cursor, buttons/tags/badges, section
+   layouts, and card surfaces.
+   Consolidated from: animations.css, cursor.css, components.css, sections.css,
+   cards.css — original relative order preserved for cascade safety.
+   ========================================================================== */
+
+/* ============================================================================
+   1. ANIMATIONS.CSS — hero boot-in, reveal engine, theme wipe, focus mode
+   ============================================================================ */
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+
+/* ---------- Hero boot-in ---------- */
+@keyframes heroBootLeft { 0% { opacity: 0; transform: perspective(1000px) rotateY(-12deg) translateX(-60px) translateZ(-80px); } 60% { opacity: 1; transform: perspective(1000px) rotateY(2deg) translateX(4px) translateZ(10px); } 100% { opacity: 1; transform: perspective(1000px) rotateY(0deg) translateX(0) translateZ(0); } }
+@keyframes heroBootRight { 0% { opacity: 0; transform: perspective(1000px) rotateY(14deg) translateX(60px) translateZ(-60px) scale(0.92); } 60% { opacity: 1; transform: perspective(1000px) rotateY(-2deg) translateX(-4px) translateZ(8px) scale(1.01); } 100% { opacity: 1; transform: perspective(1000px) rotateY(0deg) translateX(0) translateZ(0) scale(1); } }
+@keyframes heroBootBadge { 0% { opacity: 0; transform: translateZ(-40px) scale(0.8) translateY(20px); } 100% { opacity: 1; transform: translateZ(0) scale(1) translateY(0); } }
+@keyframes heroBootDeco { 0% { opacity: 0; transform: translateX(30px); } 100% { opacity: 0.4; transform: translateX(0); } }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+@keyframes blobFloat { 0% { transform: translate(0,0) scale(1); } 30% { transform: translate(-8px,-12px) scale(1.02); } 60% { transform: translate(12px,-6px) scale(0.98); } 80% { transform: translate(-6px,10px) scale(1.01); } 100% { transform: translate(0,0) scale(1); } }
+
+.hero-left { animation: heroBootLeft 1.1s var(--ease-glass) forwards; animation-delay: 0.1s; opacity: 0; }
+.hero-right { animation: heroBootRight 1.2s var(--ease-glass) forwards; animation-delay: 0.25s; opacity: 0; }
+.japan-badge { animation: heroBootBadge 0.9s var(--ease-glass) forwards; animation-delay: 0.9s; opacity: 0; }
+.deco-lines span { opacity: 0; animation: heroBootDeco 0.6s ease forwards; }
+.deco-lines span:nth-child(1) { animation-delay: 1.0s; } .deco-lines span:nth-child(2) { animation-delay: 1.1s; } .deco-lines span:nth-child(3) { animation-delay: 1.2s; } .deco-lines span:nth-child(4) { animation-delay: 1.3s; } .deco-lines span:nth-child(5) { animation-delay: 1.4s; }
+
+/* ---------- Universal reveal engine ----------
+   No fade, no blur — opacity stays constant at 1 always; entrance/exit are
+   driven purely by transform (translate + scale), which is the most
+   reliable, best-supported technique across browsers. (An earlier version
+   of this used clip-path + 3D perspective for a punchier wipe effect, but
+   that combination has real cross-browser stacking-context edge cases and
+   was causing content to render invisible in some cases — reverted for
+   reliability.) Entrance and exit still move in genuinely different
+   directions, so it reads as two distinct motions, not one reversed. */
+[data-anim] {
+  opacity: 1;
+  will-change: transform;
+  transform: translateY(50px) scale(0.94);
+}
+[data-anim="fade-left"]  { transform: translateX(-46px) scale(0.95); }
+[data-anim="fade-right"] { transform: translateX(46px) scale(0.95); }
+[data-anim="fade-down"]  { transform: translateY(-50px) scale(0.94); }
+
+[data-anim].in {
+  transform: none;
+  transition: transform 0.75s var(--ease-spring);
+}
+/* Exit recedes in the OPPOSITE direction from its entrance — distinct
+   signature, quicker, no spring overshoot (a "settling back" feel). */
+[data-anim].out {
+  transform: translateY(-22px) scale(0.9);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.7, 1);
+}
+[data-anim="fade-left"].out  { transform: translateX(30px) scale(0.92); }
+[data-anim="fade-right"].out { transform: translateX(-30px) scale(0.92); }
+
+/* ---------- Spatial section transitions ---------- */
+.section-spatial {
+  opacity: 1;
+  transform: translateY(60px) scale(0.96);
+}
+.section-spatial.in {
+  transform: translateY(0) scale(1);
+  transition: transform 0.9s var(--ease-spring);
+}
+.section-spatial.out {
+  transform: translateY(-30px) scale(0.97);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.7, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-anim], [data-anim].out, .section-spatial, .section-spatial.out { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .contact-link { animation: none !important; }
+}
+
+/* ---------- Card stagger children ---------- */
+.stagger-child { transition-delay: calc(var(--i, 0) * 70ms); }
+
+/* ---------- THEME TOGGLE — blur circular wipe, not a fade ----------
+   Previously this animated backdrop-filter's blur RADIUS every frame,
+   which forces the browser to resample everything behind the veil on
+   every tick — the single most expensive thing you can animate. Same
+   visual impression, much cheaper composition:
+   1) a translucent circle expands via clip-path (GPU-composited, cheap)
+   2) the page gets one brief, STATIC filter:blur() pulse (two paints —
+      blur on, blur off — instead of an animated blur value) */
+#theme-transition-veil {
+  position: fixed; inset: 0; z-index: var(--z-transition);
+  pointer-events: none;
+  background: rgba(var(--accent-rgb), 0.10);
+  clip-path: circle(0% at var(--tx, 50%) var(--ty, 50%));
+  transition: clip-path 0.6s var(--ease-glass);
+}
+#theme-transition-veil.wiping {
+  clip-path: circle(150% at var(--tx, 50%) var(--ty, 50%));
+}
+
+#page-blur-pulse {
+  filter: blur(0px);
+  transition: filter 0.22s ease-out;
+}
+#page-blur-pulse.pulsing { filter: blur(7px); }
+
+/* removed: page-transition-overlay (no longer exists), #ambient-wash (reverted) */
+
+/* ---------- Focus mode — hides decorative background effects on demand ---------- */
+.focus-mode #ambient-canvas,
+.focus-mode #star-canvas,
+.focus-mode .glass-blob-layer,
+.focus-mode #bg-depth-grid,
+.focus-mode #metaball-canvas,
+.focus-mode .contact-watermark {
+  opacity: 0 !important;
+  transition: opacity 0.5s ease;
+}
+#ambient-canvas, #star-canvas, .glass-blob-layer, #bg-depth-grid, #metaball-canvas {
+  transition: opacity 0.5s ease;
+}
+
+/* ---------- Editorial section numbering ---------- */
+body { counter-reset: section-counter; }
+.section-spatial, .filmstrip-section { counter-increment: section-counter; }
+/* Total is 8, not the original 7 — Quick Answers added a new visible
+   .section-spatial. display:none elements (like the draft Testimonials
+   section) don't generate boxes and so don't increment this counter, but
+   if Testimonials is ever activated (see its comment in index.html),
+   this needs to become "/ 09". */
+.section-spatial > .section-label::after {
+  content: " " counter(section-counter, decimal-leading-zero) " / 08";
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--muted);
+  margin-left: 10px;
+  letter-spacing: 1px;
+  text-transform: none;
+}
+
+/* ---------- Secondary wayfinding rail ---------- */
+#scroll-rail {
+  position: fixed; top: 20%; right: 14px; bottom: 20%; width: 2px;
+  background: rgba(var(--accent-rgb), 0.1);
+  z-index: 400; pointer-events: none;
+  border-radius: 2px;
+}
+#scroll-rail-fill {
+  position: absolute; top: 0; left: 0; width: 100%; height: 0%;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+  border-radius: 2px; box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.4);
+}
+@media (max-width: 900px) { #scroll-rail { display: none; } }
+
+/* #ambient-wash and circadian tinting removed — reverted per feedback, background stays the original network + star + blob look */
+#bg-depth-grid { position: fixed; inset: -100px; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 80px 80px; opacity: 0.035; z-index: -2; pointer-events: none; will-change: transform; }
+#energy-flow-line { position: fixed; right: 0; top: 0; width: 2px; height: 100vh; background: var(--accent); transform-origin: top; transform: scaleY(0); box-shadow: 0 0 10px var(--accent); z-index: 499; pointer-events: none; will-change: transform; }
+
+@keyframes scanMove { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* ============================================================================
+   2. CURSOR.CSS — adaptive cursor ring + context labels
+   ============================================================================ */
+
+/* ==========================================================================
+   CURSOR — adaptive ring + context labels
+   Replaces the old flat dot + mix-blend-mode ring.
+   ========================================================================== */
+.cursor {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  /* One layer above .cursor-ring (2147483000) so the small precision dot
+     always sits ON TOP of the ring instead of behind its blurred glass. */
+  pointer-events: none; z-index: 2147483001;
+  will-change: transform;
+}
+
+.cursor-ring {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 2147483000;
+  border: 1.4px solid rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--glass-tint-rgb), 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  will-change: transform;
+  transition: width 0.35s var(--ease-spring), height 0.35s var(--ease-spring),
+              border-color 0.3s ease, background 0.3s ease, opacity 0.25s ease;
+}
+
+.cursor-ring.ring-hover {
+  width: 46px; height: 46px;
+  border-color: rgba(var(--accent-rgb), 0.8);
+  background: rgba(var(--glass-tint-rgb), 0.18);
+}
+
+.cursor-ring.ring-label {
+  width: auto; height: 40px;
+  min-width: 74px;
+  border-radius: 999px;
+  padding: 0 18px;
+  border-color: rgba(var(--accent-rgb), 0.85);
+  background: rgba(var(--glass-tint-rgb), 0.72);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.cursor-ring.ring-press { border-color: var(--accent); }
+
+.cursor-label {
+  font-family: var(--font-ui);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  color: var(--text);
+  opacity: 0; transform: scale(0.85);
+  transition: opacity 0.2s ease, transform 0.25s var(--ease-spring);
+  white-space: nowrap;
+}
+.cursor-ring.ring-label .cursor-label { opacity: 1; transform: scale(1); }
+
+/* When the ring becomes a label pill, hide the small precision dot — the pill is the whole affordance now */
+.cursor-ring.ring-label ~ .cursor,
+body:has(.cursor-ring.ring-label) .cursor { opacity: 0; }
+
+/* ============================================================================
+   3. COMPONENTS.CSS — buttons, tags, badges, marquee, score blocks, footer
+   ============================================================================ */
+
+/* ==========================================================================
+   COMPONENTS — buttons, tags, badges, marquee, score block
+   ========================================================================== */
+
+.btn-primary, .btn-outline {
+  padding: 14px 32px; text-decoration: none; font-size: 12px; letter-spacing: 2px;
+  text-transform: uppercase; transition: transform 0.45s var(--ease-spring), background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.35s ease;
+  border-radius: 999px;
+  font-family: var(--font-ui); display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary { background: var(--accent); color: var(--bg); font-weight: 600; }
+.btn-primary:hover { background: var(--text); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.16); }
+.btn-primary:active, .btn-outline:active { transform: scale(0.96); transition: transform 0.15s cubic-bezier(0.4,0,0.6,1); }
+.btn-outline { border: 1px solid var(--glass-l2-border); color: var(--muted); background: var(--glass-l1-bg); backdrop-filter: blur(10px); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+.hero-cta { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+
+/* Tags */
+.exp-tags, .project-tech { display: flex; flex-wrap: wrap; gap: 8px; }
+.exp-tag, .tech-tag {
+  border: 1px solid var(--glass-l1-border); border-radius: 8px; padding: 4px 11px;
+  font-size: 12px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase;
+  background: var(--glass-l1-bg); backdrop-filter: blur(8px);
+}
+
+/* Status badges (used on new project cards) */
+.status-badge { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 11px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-ui); font-weight: 600; }
+.status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.status-complete { color: #34d399; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); }
+.status-progress { color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); }
+.status-blocked { color: #fb7185; background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.25); }
+
+/* Marquee */
+.marquee-wrap { overflow: hidden; padding: 28px 0; border-top: 1px solid var(--glass-l1-border); border-bottom: 1px solid var(--glass-l1-border); position: relative; z-index: var(--z-section); }
+.marquee { display: flex; gap: 28px; white-space: nowrap; animation: marqueeScroll 32s linear infinite; width: max-content; }
+.marquee span { font-family: var(--font-ui); font-size: 12.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.marquee span.accent { color: var(--accent); }
+@keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* Score / stat blocks */
+.score-block { display: inline-flex; align-items: center; gap: 24px; border-radius: 16px; padding: 20px 28px; margin-top: 32px; }
+.score-num { font-family: var(--font-display); font-size: 48px; font-weight: 300; color: var(--accent); line-height: 1; }
+.score-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+.hero-stats { display: flex; gap: 40px; margin-bottom: 48px; flex-wrap: wrap; }
+.stat-val { font-family: var(--font-display); font-size: 40px; font-weight: 300; color: var(--accent); line-height: 1; display: block; }
+.stat-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+/* Radar wrapper — removed */
+
+/* Theme toggle button (also used inside dock) */
+.theme-toggle { position: relative; overflow: visible; }
+.theme-toggle svg { width: 15px; height: 15px; }
+.theme-icon-sun, .theme-icon-moon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity 0.3s, transform 0.4s var(--ease-spring); }
+body:not(.light-mode) .theme-icon-sun { opacity: 0; transform: rotate(90deg) scale(0.5); }
+body:not(.light-mode) .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+body.light-mode .theme-icon-sun { opacity: 1; transform: rotate(0) scale(1); }
+body.light-mode .theme-icon-moon { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+
+/* Simple/Enhanced mode toggle — same icon-swap pattern as the theme
+   toggle directly above, just keyed off html[data-mode] instead of
+   body.light-mode. */
+.mode-toggle { position: relative; overflow: visible; }
+.mode-toggle svg { width: 15px; height: 15px; }
+.mode-icon-simple, .mode-icon-enhanced { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity 0.3s, transform 0.4s var(--ease-spring); }
+html[data-mode="simple"] .mode-icon-simple { opacity: 1; transform: rotate(0) scale(1); }
+html[data-mode="simple"] .mode-icon-enhanced { opacity: 0; transform: rotate(90deg) scale(0.5); }
+html[data-mode="enhanced"] .mode-icon-simple { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+html[data-mode="enhanced"] .mode-icon-enhanced { opacity: 1; transform: rotate(0) scale(1); }
+
+.footer-copy, .footer-jp { font-family: var(--font-ui); font-size: 12px; letter-spacing: 1px; color: var(--muted); }
+footer { padding: 40px 60px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; position: relative; z-index: var(--z-section); border-top: 1px solid var(--glass-l1-border); }
+
+
+/* ============================================================================
+   4. SECTIONS.CSS — hero, about, academic timeline, grids, achievements, contact
+   ============================================================================ */
+
+/* ==========================================================================
+   SECTION LAYOUTS
+   ========================================================================== */
+
+/* ---------- HERO ---------- */
+.hero { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; position: relative; overflow: hidden; perspective: 1200px; }
+.hero-left { display: flex; flex-direction: column; justify-content: center; padding: 140px 60px 80px; position: relative; z-index: 2; transform-style: preserve-3d; }
+.hero-eyebrow { font-size: 12px; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); margin-bottom: 32px; display: flex; align-items: center; gap: 16px; }
+.hero-eyebrow::before { content: ''; width: 40px; height: 1px; background: var(--accent); }
+.hero-name { font-family: var(--font-display); font-size: clamp(56px, 7vw, 100px); font-weight: 300; line-height: 0.95; letter-spacing: -2px; color: var(--text); margin-bottom: 8px; }
+.hero-name em { font-style: italic; color: var(--accent); }
+/* BUG FIX: .hero-title's text is typed/deleted character-by-character by
+   the role rotator in effects.js. When it briefly becomes an empty string
+   between phrases, the element had no explicit height to fall back on, so
+   it collapsed to near-zero and everything below it visibly jumped up.
+   line-height + min-height (in em, so it scales with the clamp() font
+   size above) reserves that space permanently, whether the text is full,
+   partial, or empty. */
+.hero-title { font-family: var(--font-mono-display); font-size: clamp(16px, 2.5vw, 30px); letter-spacing: 5px; color: var(--muted); margin-bottom: 40px; line-height: 1.3; min-height: 1.3em; }
+.hero-desc { max-width: 460px; color: var(--muted); line-height: 1.9; margin-bottom: 48px; font-size: 16px; }
+
+.hero-right { position: relative; overflow: hidden; }
+#metaball-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.hero-photo-wrap {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  transform: translateY(-8%) scale(1); opacity: 1; filter: blur(0px);
+  z-index: 2;
+  transition: transform 0.9s var(--ease-spring), opacity 0.7s ease, filter 0.6s ease;
+}
+/* Scroll-triggered layer, independent of the load-in keyframe and the
+   continuous float on .hero-photo itself: every time the hero leaves
+   view it softens back, and every time it returns it arrives again
+   (spring easing gives it a gentle overshoot-and-settle "pop"). */
+.hero-photo-wrap.hero-receded {
+  transform: translateY(-4%) scale(0.9);
+  opacity: 0.5;
+  filter: blur(3px);
+  transition: transform 0.5s ease-out, opacity 0.45s ease-out, filter 0.4s ease-out;
+}
+
+/* Hero photo frame — a proper frosted-glass panel grounding the transparent
+   cutout PNG, instead of the raw image floating with its own box-shadow
+   drawn around the full (mostly-transparent) rectangle. */
+.hero-photo-frame {
+  width: min(62%, 420px); aspect-ratio: 3 / 4;
+  padding: 22px 22px 0 22px; /* Removed bottom padding so the image sits flush */
+  border-radius: 32px;
+  border: none;
+  position: relative; z-index: 1;
+  animation: blobFloat 8s ease-in-out infinite;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 100px rgba(var(--accent-rgb),0.08);
+  display: flex; align-items: flex-end; /* Anchors the image perfectly to the bottom */
+  justify-content: center;
+  overflow: hidden;
+  /* Smooth linear fade at the bottom to hide the hard crop of the image */
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}
+.hero-photo-frame::before {
+  /* soft radial glow behind the subject, inside the frame */
+  content: ''; position: absolute; inset: 8%;
+  background: radial-gradient(ellipse at 50% 35%, rgba(var(--accent-rgb),0.16), transparent 70%);
+  z-index: 0; border-radius: inherit;
+}
+.hero-photo {
+  width: 100%; height: 100%; 
+  object-fit: cover; /* Changed to cover so it fills the space beautifully without gaps */
+  object-position: center bottom;
+  position: relative; z-index: 1;
+  filter: drop-shadow(0 18px 26px rgba(0,0,0,0.35));
+  transform: scale(1.00); /* Reduced scale so your head doesn't clip at the top */
+  transform-origin: center bottom;
+}
+.hero-photo-wrap::after {
+  content: ''; position: absolute; bottom: 20px; left: 60%; transform: translateX(-50%);
+  width: 220px; height: 60px; background: radial-gradient(ellipse, rgba(0,0,0,0.15), transparent);
+  filter: blur(18px); z-index: 0;
+}
+.deco-lines { position: absolute; right: 40px; top: 130px; z-index: 3; display: flex; flex-direction: column; gap: 6px; }
+.deco-lines span { display: block; height: 1px; background: var(--accent); opacity: 0.4; }
+.scroll-indicator { position: absolute; bottom: 40px; left: 60px; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; z-index: 10; animation: bounce 2s ease-in-out infinite; }
+
+.japan-badge {
+  position: absolute; top: 40px; right: 65%; width: 220px; z-index: 10;
+  padding: 16px 20px; text-align: center; border-radius: 16px;
+}
+.japan-badge .jp-text { font-family: var(--font-display); font-size: 22px; color: var(--accent); display: block; margin-bottom: 4px; }
+.japan-badge small { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; min-height: auto; }
+  .hero-left { padding: 150px 24px 40px; }
+  .hero-right { height: 55vh; }
+  .japan-badge { right: 20px; top: 20px; width: 170px; }
+  .deco-lines { display: none; }
+}
+
+/* ---------- ABOUT ---------- */
+#about { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; align-items: start; }
+.about-text p { color: var(--muted); margin-bottom: 20px; line-height: 2; font-size: 16px; }
+.about-text p strong { color: var(--text); font-weight: 500; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--glass-l1-border); }
+.info-row:last-child { border-bottom: none; }
+.info-key { color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+.info-val { color: var(--text); font-size: 15px; text-align: right; }
+.info-val.accent { color: var(--accent); }
+@media (max-width: 900px) { #about { grid-template-columns: 1fr; } }
+
+/* ---------- ACADEMIC JOURNEY — replaced by the Spec Ledger + Horizon
+   Waveform module (see features.css, section 6). The old vertical-wire
+   timeline classes (.edu-timeline / .edu-entry / .edu-marker / .edu-sgpa-*)
+   have been removed along with the markup that used them. ---------- */
+
+/* ---------- GRIDS ---------- */
+/* auto-fit + minmax lets these reflow naturally at ANY viewport width/ratio,
+   instead of jumping between three hardcoded breakpoints. */
+.experience-grid, .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; position: relative; }
+.skills-grid, .cert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+
+/* NOTE (bug audit): the .thread-line / .thread-line-fill rules that used
+   to live here were leftover CSS for an old Experience-section design
+   (#experience-thread / #thread-fill) that no longer exists in the HTML —
+   the real, working equivalent is the wire-timeline system in
+   features.css (.wire-timeline / #wire-fill / #wire-pulse). Removed. */
+
+/* ---------- RECOGNITION — replaced by the Asymmetric Glass Bento Plaque
+   (see features.css, section 7). The old uniform .achievement-item row
+   list has been removed along with the markup that used it. ---------- */
+
+/* ---------- CONTACT (kept intentionally close to the original — no redesign here) ---------- */
+/* ---------- CONTACT ---------- */
+#contact { text-align: center; position: relative; isolation: isolate; padding-top: 50px; } /* Overrides the default 120px padding to pull the section up */
+.contact-inner { max-width: 720px; margin: 0 auto; position: relative; z-index: 2; }
+
+/* Giant background watermark — sits at the deepest layer (L0), behind the
+   foreground contact card. Parallax (JS) makes it drift slower than scroll;
+   the fill sweeps in via a scroll-linked mask as the section comes into view. */
+.contact-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: clamp(200px, 26vw, 320px);
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  will-change: transform;
+}
+.contact-watermark span {
+  font-family: var(--font-mono-display);
+  font-size: clamp(90px, 16vw, 260px);
+  font-weight: 400;
+  letter-spacing: 4px;
+  line-height: 1;
+  white-space: nowrap;
+  position: absolute;
+  user-select: none;
+}
+.wm-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(var(--accent-rgb), 0.16);
+}
+.wm-fill {
+  color: transparent;
+  background-image: linear-gradient(100deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  clip-path: inset(0 calc(100% - var(--fill, 0%)) 0 0);
+  opacity: 0.5;
+}
+body.light-mode .wm-outline { -webkit-text-stroke-color: rgba(var(--accent-rgb), 0.22); }
+.contact-tagline { font-family: var(--font-display); font-size: clamp(32px, 5vw, 56px); font-weight: 300; margin: 20px 0; color: var(--text); }
+.contact-tagline em { font-style: italic; color: var(--accent); }
+.contact-sub { color: var(--muted); font-size: 16px; margin-bottom: 28px; }
+
+/* Quick-pick prefilled subject lines — lowers the friction for the exact
+   action the section wants: a recruiter reaching out with a specific,
+   pre-labeled ask instead of a blank "contact me" link. */
+.contact-quick-picks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 48px; }
+.contact-quick-pick {
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  color: var(--muted); text-decoration: none;
+  padding: 9px 18px; border-radius: 999px;
+  border: 1px solid var(--glass-l1-border); background: var(--glass-l1-bg);
+  transition: color 0.3s var(--ease-glass), border-color 0.3s var(--ease-glass), background 0.3s var(--ease-glass), transform 0.35s var(--ease-spring);
+}
+.contact-quick-pick:hover { color: var(--accent); border-color: rgba(var(--accent-rgb), 0.35); background: rgba(var(--accent-rgb), 0.08); transform: translateY(-2px); }
+.contact-links { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.contact-link {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 24px 16px; border-radius: 16px;
+  text-decoration: none; width: 100%; transition: transform 0.5s var(--ease-glass), border-color 0.4s var(--ease-glass);
+  position: relative;
+  animation: contactIdleFloat 4.5s ease-in-out infinite;
+}
+/* Idle: a barely-perceptible continuous bob via the `translate` individual
+   transform property — it composes with `transform` instead of fighting it,
+   so the hover lift below (which animates `transform`) can layer on top of
+   the idle motion without ever starting or stopping an animation. No hard
+   stop/snap in either direction. */
+@keyframes contactIdleFloat {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -3px; }
+}
+.contact-link { background: var(--glass-l2-bg); backdrop-filter: blur(var(--glass-l2-blur)) saturate(150%); -webkit-backdrop-filter: blur(var(--glass-l2-blur)) saturate(150%); border: 1px solid var(--glass-l2-border); }
+.contact-link:hover { border-color: var(--accent); transform: translateY(-8px); transition: transform 0.3s var(--ease-spring), border-color 0.25s ease; }
+button.contact-link { font-family: inherit; cursor: none; appearance: none; -webkit-appearance: none; width: auto; }
+.copy-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 26px; height: 26px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--glass-l1-border); background: var(--glass-l1-bg);
+  color: var(--muted); cursor: none; opacity: 0; transform: scale(0.85);
+  transition: opacity 0.25s ease, transform 0.35s var(--ease-spring), color 0.25s ease, border-color 0.25s ease;
+}
+.contact-link:hover .copy-btn { opacity: 1; transform: scale(1); }
+.copy-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; position: absolute; transition: opacity 0.2s ease, transform 0.3s var(--ease-spring); }
+.copy-btn .icon-check { opacity: 0; transform: scale(0.5); color: #34d399; }
+.copy-btn .icon-copy { opacity: 1; transform: scale(1); }
+.copy-btn.copied .icon-copy { opacity: 0; transform: scale(0.5); }
+.copy-btn.copied .icon-check { opacity: 1; transform: scale(1); }
+.copy-btn.copied { border-color: rgba(52,211,153,0.4); }
+.copy-btn:hover { color: var(--accent); border-color: rgba(var(--accent-rgb),0.35); }
+.contact-link-icon { font-size: 22px; }
+.contact-link-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.contact-link-val { font-size: 15px; color: var(--text); }
+
+/* ============================================================================
+   5. CARDS.CSS — experience/education/skill cards, project cards, cert cards
+   ============================================================================ */
+
+/* ==========================================================================
+   CARDS — L2 glass surfaces. Project & certification cards get the
+   full redesign; experience cards share the same glass base for
+   consistency. (.skill-card/.skill-icon/.skill-cat/.skill-items/
+   .skill-chip removed — the Skills section is now the Proficiency Index,
+   a plain list rather than a card grid; see features.css.)
+   ========================================================================== */
+
+.exp-card {
+  padding: 34px 32px;
+  transition: transform 0.5s var(--ease-spring), box-shadow 0.4s var(--ease-glass), border-color 0.35s var(--ease-glass);
+}
+.exp-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.3);
+  transform: translateY(-5px);
+  box-shadow: var(--glass-l2-shadow);
+}
+/* iOS-style press: a real material responds to touch/click with an immediate,
+   slightly-overdamped compress, then springs back on release — no glow, just weight. */
+.exp-card:active {
+  transform: translateY(-2px) scale(0.985);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.exp-type {
+  font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent2);
+  margin-bottom: 12px; display: inline-block; padding: 4px 11px; border-radius: 999px;
+  border: 1px solid rgba(var(--accent2-rgb), 0.25); background: rgba(var(--accent2-rgb), 0.08);
+}
+.exp-date { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.exp-title { font-family: var(--font-display); font-size: 21px; font-weight: 400; color: var(--text); margin-bottom: 4px; line-height: 1.25; }
+.exp-org { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.exp-desc { color: var(--muted); font-size: 14px; line-height: 1.85; margin-bottom: 16px; }
+/* .edu-* card/score rules removed — the education section no longer uses
+   the card+badge pattern (see the Spec Ledger module in features.css). */
+
+/* ==========================================================================
+   PROJECT CARDS — redesigned
+   ========================================================================== */
+.project-card {
+  padding: 32px 30px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.5s var(--ease-spring), box-shadow 0.4s var(--ease-glass), border-color 0.35s var(--ease-glass);
+  transform-style: preserve-3d;
+}
+.project-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.32);
+  box-shadow: var(--glass-l3-shadow);
+}
+.project-card:active {
+  transform: scale(0.985);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1);
+}
+.project-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.project-num { font-family: var(--font-mono-display); font-size: 12.5px; letter-spacing: 3px; color: var(--muted); opacity: 0.6; }
+.project-title { font-family: var(--font-display); font-size: 23px; font-weight: 400; color: var(--text); line-height: 1.2; }
+.project-subtitle { font-family: var(--font-ui); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-top: 2px; }
+.project-desc { font-size: 15.5px; line-height: 1.75; color: var(--muted); flex-grow: 1; }
+.project-note { font-size: 13px; line-height: 1.6; color: var(--subtle); font-style: italic; padding: 10px 14px; border-left: 2px solid rgba(var(--accent-rgb),0.4); background: rgba(var(--accent-rgb),0.04); border-radius: 0 8px 8px 0; }
+.project-tech { margin-top: 4px; }
+.project-links { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.project-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-ui); font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-body); text-decoration: none; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--glass-l2-border); background: var(--glass-l1-bg);
+  transition: all 0.25s var(--ease-glass);
+}
+.project-link:hover { color: var(--bg); background: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
+.project-link svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+.project-link.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ==========================================================================
+   CERTIFICATION CARDS — credential-wall tiles
+   ========================================================================== */
+.cert-card {
+  padding: 26px 24px;
+  cursor: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.5s var(--ease-spring), box-shadow 0.4s var(--ease-glass), border-color 0.3s;
+}
+.cert-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--glass-l3-shadow);
+  border-color: rgba(var(--accent-rgb), 0.3);
+}
+.cert-card:active {
+  transform: translateY(-3px) scale(0.98);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1);
+}
+.cert-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cert-mark { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(var(--accent-rgb),0.22), rgba(var(--accent2-rgb),0.14)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.5s var(--ease-spring); }
+.cert-card:hover .cert-mark { transform: scale(1.08) rotate(-4deg); }
+.cert-mark svg { width: 19px; height: 19px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+.cert-verified { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: #34d399; display: flex; align-items: center; gap: 4px; }
+.cert-verified svg { width: 11px; height: 11px; stroke: #34d399; fill: none; stroke-width: 2.5; }
+.cert-issuer { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); }
+.cert-title { font-family: var(--font-display); font-size: 19px; color: var(--text); line-height: 1.25; }
+.cert-desc { font-size: 14.5px; line-height: 1.65; color: var(--muted); }
+.cert-id { display: block; font-family: var(--font-mono-display); font-size: 12px; color: var(--muted); letter-spacing: 0.3px; margin-top: 8px; }
+.cert-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid var(--glass-l1-border); flex-wrap: wrap; }
+.cert-date { font-size: 12px; color: var(--muted); letter-spacing: 0.3px; }
+.cert-id { font-size: 12px; color: var(--subtle); font-family: var(--font-ui); }
+.cert-view-btn { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); background: none; border: none; cursor: none; padding: 0; }
+.cert-verify-link {
+  font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent2);
+  text-decoration: none; border-bottom: 1px dotted rgba(var(--accent2-rgb), 0.5);
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.cert-verify-link:hover { color: var(--text); border-color: var(--text); }
+
+/* ==========================================================================
+   EASTER EGG TOAST — hidden by default, only ever shown by the Konami-code
+   listener in effects.js. No visible trigger anywhere on the page.
+   ========================================================================== */
+#easter-egg-toast {
+  position: fixed; bottom: 28px; left: 50%; z-index: 10050;
+  transform: translate(-50%, 20px);
+  max-width: min(420px, calc(100vw - 48px));
+  font-family: var(--font-ui); font-size: 14px; line-height: 1.5; color: var(--text);
+  background: var(--glass-l3-bg); border: 1px solid var(--glass-l3-border);
+  backdrop-filter: blur(var(--glass-l3-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-l3-blur)) saturate(160%);
+  border-radius: 14px; padding: 16px 22px;
+  box-shadow: var(--glass-l3-shadow);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s var(--ease-glass), transform 0.4s var(--ease-spring);
+}
+#easter-egg-toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) {
+  #easter-egg-toast { transition: opacity 0.2s ease; transform: translate(-50%, 0); }
+}

@@ -1,0 +1,571 @@
+/* ==========================================================================
+   MAIN.CSS — Design tokens, reset/base, glass system, navigation chrome
+   Consolidated from: variables.css, base.css, glass.css, nav.css
+   Load order preserved exactly as original <link> order — DO NOT reorder
+   the sections below, later files intentionally cascade over earlier ones.
+   ========================================================================== */
+
+/* ============================================================================
+   1. VARIABLES.CSS — design tokens
+   ============================================================================ */
+
+/* ==========================================================================
+   DESIGN TOKENS
+   Single source of truth for color, glass, depth, spacing and type scale.
+   Every other stylesheet reads from these custom properties only —
+   never hard-code a color or a blur value outside this file.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand palette (unchanged from original identity) ---- */
+  --bg: #080a0f;
+  --surface: #0d1017;
+  --panel: #111520;
+  --border: #1e2535;
+  --accent: #c8a96e;
+  --accent-rgb: 200, 169, 110;
+  --accent2: #4a9eff;
+  --accent2-rgb: 74, 158, 255;
+  --text: #ffffff;
+  --text-body: #e2e8f0;
+  --muted: #a9b7cb;
+  --subtle: #8b9bb3;
+
+  /* ---- Glass surfaces (dark mode) ----
+     Each level = its own opacity / blur / border / shadow.
+     L0 ambient -> L1 section -> L2 card -> L3 floating UI.
+     Bumped heavier across the board for a more pronounced frosted-glass feel. */
+  --glass-tint-rgb: 17, 21, 32;           /* base tint for glass fills, ~ --panel */
+  --glass-l1-bg: rgba(17, 21, 32, 0.52);
+  --glass-l1-blur: 16px;
+  --glass-l1-border: rgba(255, 255, 255, 0.07);
+  --glass-l1-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+
+  --glass-l2-bg: rgba(20, 25, 38, 0.58);
+  --glass-l2-blur: 26px;
+  --glass-l2-border: rgba(255, 255, 255, 0.1);
+  --glass-l2-shadow: 0 16px 48px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255,255,255,0.02) inset;
+
+  --glass-l3-bg: rgba(22, 27, 42, 0.7);
+  --glass-l3-blur: 40px;
+  --glass-l3-border: rgba(255, 255, 255, 0.13);
+  --glass-l3-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+
+  --glass-highlight: rgba(255, 255, 255, 0.5);   /* top-edge sheen on L1-L3 */
+  --glass-highlight-soft: rgba(255, 255, 255, 0.14);
+
+  /* ---- Typography ---- */
+  --font-display: 'Cormorant Garamond', 'Noto Serif JP', 'Noto Serif Devanagari', serif;
+  --font-mono-display: 'Bebas Neue', 'Noto Sans JP', 'Noto Sans Devanagari', sans-serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Inter', 'Noto Sans JP', 'Noto Sans Devanagari', sans-serif;
+  --font-body: 'Manrope', 'Noto Sans JP', 'Noto Sans Devanagari', sans-serif;
+
+  /* ---- Elevation z-index scale ---- */
+  --z-base: 1;
+  --z-section: 2;
+  --z-l1: 10;
+  --z-l2: 20;
+  --z-dock: 500;
+  --z-palette: 900;
+  --z-cursor: 9998;
+  --z-transition: 10000;
+
+  /* ---- Motion ---- */
+  --ease-glass: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 0.2s;
+  --dur-med: 0.45s;
+  --dur-slow: 0.8s;
+}
+
+/* ==========================================================================
+   LIGHT MODE — overrides only what needs to change
+   ========================================================================== */
+body.light-mode {
+  --bg: #f5f3ef;
+  --surface: #ece9e3;
+  --panel: #e4e0d8;
+  --border: #c8c2b4;
+  /* #836234 — darkened from the original #a07840 to fix a real WCAG AA
+     contrast failure: the original gave only 3.61:1 against this light
+     background (needs 4.5:1 for normal-size text), which every small
+     accent-colored label on the site (section labels, tags) used as
+     text color. This value gives 5.04:1 — same gold family, just dark
+     enough to actually be readable at small sizes. Dark mode's --accent
+     (#c8a96e, 8.82:1) already passed comfortably and is unchanged. */
+  --accent: #836234;
+  --accent-rgb: 131, 98, 52;
+  --accent2: #1a5cb0;
+  --accent2-rgb: 26, 92, 176;
+  --text: #0b1220;
+  --text-body: #26324a;
+  --muted: #364158;
+  --subtle: #4a556d;
+
+  --glass-tint-rgb: 255, 255, 255;
+  --glass-l1-bg: rgba(255, 255, 255, 0.48);
+  --glass-l1-border: rgba(15, 23, 42, 0.07);
+  --glass-l1-shadow: 0 8px 32px rgba(80, 65, 40, 0.10);
+
+  --glass-l2-bg: rgba(255, 255, 255, 0.58);
+  --glass-l2-border: rgba(15, 23, 42, 0.09);
+  --glass-l2-shadow: 0 16px 48px rgba(80, 65, 40, 0.14), 0 0 0 1px rgba(255,255,255,0.5) inset;
+
+  --glass-l3-bg: rgba(255, 255, 255, 0.74);
+  --glass-l3-border: rgba(15, 23, 42, 0.10);
+  --glass-l3-shadow: 0 24px 64px rgba(80, 65, 40, 0.18), 0 0 0 1px rgba(255,255,255,0.6) inset;
+
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-highlight-soft: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================================
+   2. BASE.CSS — reset, typography, global overlays
+   ============================================================================ */
+
+/* ==========================================================================
+   BASE — reset, typography, cursor, global overlays
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: auto; }
+html, body { max-width: 100%; overflow-x: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--text-body);
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 1.8;
+  cursor: none;
+  transition: background 0.5s var(--ease-glass), color 0.5s var(--ease-glass);
+}
+
+/* Circadian tinting removed per feedback — it altered the background's overall feel */
+
+/* Language-adaptive font stacks — swapped by data-lang on <html> */
+html[lang="ja"] body {
+  --font-display: 'Noto Serif JP', 'Cormorant Garamond', serif;
+  --font-mono-display: 'Noto Sans JP', 'Bebas Neue', sans-serif;
+  --font-ui: 'Noto Sans JP', 'Inter', sans-serif;
+  letter-spacing: 0;
+}
+html[lang="hi"] body {
+  --font-display: 'Noto Serif Devanagari', 'Cormorant Garamond', serif;
+  --font-mono-display: 'Noto Sans Devanagari', 'Bebas Neue', sans-serif;
+  --font-ui: 'Noto Sans Devanagari', 'Inter', sans-serif;
+  letter-spacing: 0;
+}
+
+@media (pointer: coarse) {
+  body, .theme-toggle, a, button { cursor: auto; }
+  .cursor, .cursor-ring { display: none !important; }
+}
+
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+
+::selection { background: rgba(var(--accent-rgb), 0.3); color: var(--text); }
+
+/* Paragraphs & informative text (About → Recognition sections only —
+   Hero and Contact keep the serif display font per spec). Manrope, and
+   a touch larger than the previous 18px serif for better scan-ability. */
+.hero-desc {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-body);
+  line-height: 1.7;
+}
+.about-text p, .exp-desc, .wire-desc, .project-desc, .cert-desc, .skill-row-desc, .ledger-pedigree-school, .bento-desc {
+  font-family: var(--font-body);
+  font-size: 16.5px;
+  font-weight: 400;
+  color: var(--text-body);
+  line-height: 1.75;
+}
+
+/* Light mode: a thin-stroke serif at low contrast reads worse on bright
+   blurred glass than the same weight does on dark glass. Bumping weight
+   and tightening color brings both modes to comparable reading comfort. */
+body.light-mode .hero-desc,
+body.light-mode .about-text p,
+body.light-mode .exp-desc,
+body.light-mode .project-desc,
+body.light-mode .cert-desc,
+body.light-mode .skill-row-desc,
+body.light-mode .ledger-pedigree-school,
+body.light-mode .bento-desc {
+  font-weight: 500;
+  color: var(--text-body);
+}
+body.light-mode .section-label,
+body.light-mode .stat-label,
+body.light-mode .exp-tag,
+body.light-mode .tech-tag,
+body.light-mode .muted,
+body.light-mode .cert-date,
+body.light-mode .info-key {
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.section-label, .hero-eyebrow, .stat-label, .exp-tag, .tech-tag {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.exp-org, .edu-school { color: var(--accent); font-weight: 500; letter-spacing: 0.05em; }
+
+/* Section titles (shared) */
+.section-title { font-family: var(--font-display); font-size: clamp(36px, 5vw, 64px); font-weight: 300; line-height: 1.05; letter-spacing: -1px; margin-bottom: 56px; }
+.section-title em { font-style: italic; color: var(--accent); }
+.section-label { font-size: 12px; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
+
+/* Skip-to-content: invisible until a keyboard user tabs to it — standard
+   accessibility pattern, otherwise every visitor has to tab through the
+   entire dock nav before reaching page content. */
+.skip-link {
+  position: fixed; top: -60px; left: 16px; z-index: 10001;
+  background: var(--accent); color: var(--bg);
+  font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+  padding: 12px 22px; border-radius: 10px;
+  text-decoration: none;
+  transition: top 0.25s var(--ease-spring);
+}
+.skip-link:focus { top: 16px; }
+.section-label::before { content: ''; width: 30px; height: 1px; background: var(--accent); }
+html[lang="ja"] .section-label, html[lang="hi"] .section-label { letter-spacing: 1px; }
+
+section { padding: 120px 60px; position: relative; z-index: var(--z-section); overflow: hidden; }
+@media (max-width: 900px) { section { padding: 90px 24px; } }
+
+/* Custom cursor styling lives in cursor.css */
+
+/* Noise overlay */
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1000; opacity: 0.35;
+}
+
+#scroll-progress {
+  position: fixed; top: 0; left: 0; height: 2px; width: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transform: scaleX(0); transform-origin: left; z-index: 999; pointer-events: none;
+}
+/* Native CSS scroll-driven animation, where the browser supports it (see
+   the matching JS feature-detection in effects.js's initScrollProgress —
+   it steps aside and leaves this element alone when this @supports block
+   is active, rather than both driving the same transform at once).
+   Runs on the compositor thread instead of the main thread; identical
+   visual result to the JS fallback for browsers that don't support it.
+   Deliberately NOT disabled under prefers-reduced-motion — this mirrors
+   the original JS behavior, which always kept the bar tracking scroll
+   regardless of that setting, since it's a direct 1:1 progress readout
+   tied to the user's own scroll input, not a gratuitous animation. */
+@supports (animation-timeline: scroll()) {
+  #scroll-progress {
+    transform: scaleX(0); /* fallback paint before the animation attaches */
+    animation: scrollProgressFill linear;
+    animation-timeline: scroll(root);
+  }
+  @keyframes scrollProgressFill {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+}
+
+#star-canvas, #ambient-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+#star-canvas { z-index: 9990; mix-blend-mode: screen; }
+
+/* ============================================================================
+   3. GLASS.CSS — glass surface system + glass blobs
+   ============================================================================ */
+
+/* ==========================================================================
+   GLASS SYSTEM — strict depth hierarchy
+   .glass-l1  section-level translucent panels   (blur 12px)
+   .glass-l2  card-level surfaces                (blur 20px)
+   .glass-l3  floating UI: dock, palette, modals (blur 32px)
+   Every glass surface gets: fill, blur, 1px border, elevation shadow,
+   and a top-edge highlight that sells "this is a pane of glass".
+   ========================================================================== */
+
+.glass-l1, .glass-l2, .glass-l3 {
+  position: relative;
+  backdrop-filter: blur(var(--glass-l1-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-l1-blur)) saturate(140%);
+  border: 1px solid var(--glass-l1-border);
+  isolation: isolate;
+}
+
+.glass-l1 {
+  background: var(--glass-l1-bg);
+  border-radius: 24px;
+  box-shadow: var(--glass-l1-shadow);
+  z-index: var(--z-l1);
+}
+
+.glass-l2 {
+  background: var(--glass-l2-bg);
+  backdrop-filter: blur(var(--glass-l2-blur)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-l2-blur)) saturate(150%);
+  border-color: var(--glass-l2-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-l2-shadow);
+  z-index: var(--z-l2);
+}
+
+.glass-l3 {
+  background: var(--glass-l3-bg);
+  backdrop-filter: blur(var(--glass-l3-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-l3-blur)) saturate(160%);
+  border-color: var(--glass-l3-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-l3-shadow);
+}
+
+/* Top-edge sheen — the detail that reads as "glass" instead of "blur" */
+.glass-l1::before, .glass-l2::before, .glass-l3::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(150deg, var(--glass-highlight) 0%, transparent 30%, transparent 70%, var(--glass-highlight-soft) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Subtle inner reflection band near the top of every glass surface */
+.glass-l1::after, .glass-l2::after, .glass-l3::after {
+  content: '';
+  position: absolute; top: 0; left: 8%; right: 8%; height: 40%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* Light mode: a faint text-shadow "backplate" behind copy sitting on
+   blurred glass — imperceptible as a shadow, but it nudges effective
+   contrast up a notch on bright, busy backgrounds. */
+body.light-mode .glass-l1 p,
+body.light-mode .glass-l2 p,
+body.light-mode .glass-l1 .info-val,
+body.light-mode .glass-l2 div:not([class]) {
+  text-shadow: 0 1px 12px rgba(255,255,255,0.6);
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-l1 { background: color-mix(in srgb, var(--panel) 88%, transparent); }
+  .glass-l2 { background: color-mix(in srgb, var(--panel) 92%, transparent); }
+  .glass-l3 { background: color-mix(in srgb, var(--panel) 95%, transparent); }
+}
+
+/* ==========================================================================
+   GLASS BLOBS — irregular liquid-glass shapes (replace flat blurred orbs)
+   Rendered as SVG with feTurbulence displacement, morphing slowly via <animate>.
+   ========================================================================== */
+.glass-blob-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glass-blob {
+  position: absolute;
+  filter: blur(0.5px);
+  opacity: 0.55;
+  will-change: transform;
+  transition: opacity 0.6s ease;
+}
+body.light-mode .glass-blob { opacity: 0.4; }
+
+.glass-blob svg { width: 100%; height: 100%; display: block; }
+
+/* ==========================================================================
+   DEPTH-BASED SECTION SCAFFOLDING
+   Sections sit on L0 (page bg). Panels within sit on L1. Cards on L2.
+   ========================================================================== */
+.section-panel {
+  padding: 56px;
+  border-radius: 28px;
+}
+@media (max-width: 900px) { .section-panel { padding: 32px 22px; } }
+
+/* Scroll-glass: cards gain extra blur as they cross the viewport edge, JS-driven via --scroll-blur */
+.scroll-glass {
+  --scroll-blur: 0px;
+  backdrop-filter: blur(calc(var(--glass-l2-blur) + var(--scroll-blur))) saturate(150%);
+  -webkit-backdrop-filter: blur(calc(var(--glass-l2-blur) + var(--scroll-blur))) saturate(150%);
+}
+
+/* ============================================================================
+   4. NAV.CSS — floating glass dock navigation
+   ============================================================================ */
+
+/* ==========================================================================
+   FLOATING GLASS DOCK NAVIGATION — redesigned
+   Heavier frosted-glass material, icon + label links, and an underline-glow
+   active indicator (replacing the previous filled pill).
+   ========================================================================== */
+.dock-wrap {
+  position: fixed;
+  top: 18px; left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-dock);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 7px 10px;
+  border-radius: 999px;
+  transition: padding 0.4s var(--ease-glass), top 0.4s var(--ease-glass), gap 0.4s var(--ease-glass);
+  /* Heavier frosted glass than the rest of the L3 system, on purpose —
+     the dock is the one element that's always on screen. */
+  backdrop-filter: blur(44px) saturate(180%);
+  -webkit-backdrop-filter: blur(44px) saturate(180%);
+}
+.dock-wrap.glass-l3 { box-shadow: var(--glass-l3-shadow); }
+
+.dock-brand {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 16px 0 6px;
+  white-space: nowrap;
+  border-right: 1px solid var(--glass-l3-border);
+  max-width: 200px; overflow: hidden;
+  transition: max-width 0.4s var(--ease-glass), opacity 0.3s var(--ease-glass), padding 0.4s var(--ease-glass), margin 0.4s var(--ease-glass);
+  color: inherit; text-decoration: none;
+}
+.dock-brand-mark {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: block; object-fit: cover;
+  background: var(--glass-l2-bg); /* fallback backdrop if the image is ever missing */
+  flex-shrink: 0;
+}
+.dock-brand-text {
+  font-family: var(--font-mono-display);
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+
+/* Compact live telemetry — always visible, even when the dock condenses on
+   scroll (unlike .dock-brand, which is purely decorative and collapses).
+   A quiet, honest readout rather than a flourish. */
+.dock-telemetry {
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 14px 0 2px;
+  border-right: 1px solid var(--glass-l3-border);
+  font-family: var(--font-mono-display); font-size: 12px; letter-spacing: 1px;
+  color: var(--muted); white-space: nowrap; flex-shrink: 0;
+}
+.dock-telemetry-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--subtle); flex-shrink: 0; transition: background 0.4s ease, box-shadow 0.4s ease; }
+.dock-telemetry.jp-overlap .dock-telemetry-dot { background: #34d399; box-shadow: 0 0 6px 1px rgba(52,211,153,0.5); }
+
+.dock-links { display: flex; align-items: center; gap: 1px; list-style: none; position: relative; padding: 0 4px; }
+.dock-links li { position: relative; }
+.dock-links a {
+  position: relative;
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  color: var(--muted);
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.3s var(--ease-glass), transform 0.25s var(--ease-spring), padding 0.4s var(--ease-glass);
+  z-index: 2;
+}
+.dock-link-icon {
+  width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8;
+  flex-shrink: 0; opacity: 0.75;
+  transition: opacity 0.3s ease, transform 0.4s var(--ease-spring);
+}
+.dock-links a:hover .dock-link-icon { opacity: 1; transform: scale(1.12); }
+.dock-link-label {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  transition: max-width 0.4s var(--ease-glass), opacity 0.3s var(--ease-glass), margin 0.4s var(--ease-glass);
+  opacity: 1;
+}
+.dock-links a:hover { color: var(--text); transform: translateY(-2px); }
+.dock-links a.active { color: var(--accent); font-weight: 700; }
+.dock-links a.active .dock-link-icon { opacity: 1; }
+
+.dock-indicator { display: none; }
+
+.dock-actions { display: flex; align-items: center; gap: 6px; padding-left: 6px; margin-left: 4px; border-left: 1px solid var(--glass-l3-border); }
+
+.dock-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: none;
+  font-size: 14px;
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease, transform 0.4s var(--ease-spring);
+  flex-shrink: 0;
+}
+.dock-btn:hover { color: var(--accent); background: rgba(var(--accent-rgb), 0.1); transform: translateY(-2px) scale(1.08); border-color: rgba(var(--accent-rgb), 0.25); }
+.dock-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+/* Language switcher */
+.lang-switch { position: relative; }
+.lang-switch-btn { font-family: var(--font-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
+.lang-menu {
+  position: absolute; top: calc(100% + 10px); right: 0;
+  min-width: 148px;
+  padding: 6px;
+  border-radius: 16px;
+  display: flex; flex-direction: column; gap: 2px;
+  opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.96);
+  transition: all 0.25s var(--ease-glass);
+  z-index: var(--z-palette);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+.lang-menu.open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+.lang-menu button {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 9px 12px; border-radius: 10px;
+  background: none; border: none; color: var(--text-body);
+  font-family: var(--font-ui); font-size: 13px; text-align: left;
+  cursor: none; transition: background 0.2s, color 0.2s;
+}
+.lang-menu button:hover { background: rgba(var(--accent-rgb), 0.1); color: var(--accent); }
+.lang-menu button.active { color: var(--accent); font-weight: 600; }
+.lang-menu button small { color: var(--muted); font-size: 12px; }
+
+/* Condensed state on scroll-down — animated collapse instead of an abrupt
+   display:none jump-cut, so the dock's width (and its translateX(-50%)
+   centering) shrinks smoothly rather than snapping sideways. */
+/* .dock-wrap.condensed .dock-brand { max-width: 0; opacity: 0; padding: 0; margin: 0; border-right-width: 0; } */
+.dock-wrap.condensed .dock-link-label { max-width: 0; opacity: 0; margin: 0; }
+.dock-wrap.condensed .dock-links a { padding: 9px 12px; }
+.dock-wrap.condensed { top: 12px; }
+.dock-wrap { transition: top 0.4s var(--ease-glass); }
+
+/* Mobile: collapse to essential icons, hide long labels */
+@media (max-width: 860px) {
+  .dock-brand { display: none; }
+  .dock-telemetry { display: none; }
+  .dock-links a { padding: 9px 11px; }
+  .dock-link-label { display: none; }
+  .dock-link-icon { width: 16px; height: 16px; opacity: 0.9; }
+  .dock-wrap { max-width: calc(100vw - 24px); overflow-x: auto; scrollbar-width: none; }
+  .dock-wrap::-webkit-scrollbar { display: none; }
+}

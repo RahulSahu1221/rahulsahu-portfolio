@@ -1,0 +1,81 @@
+/* ==========================================================================
+   PRINT — a recruiter who prints this gets a clean, readable document,
+   not a broken glass-blur page. Strips all decoration, forces plain
+   black-on-white, keeps the content structure.
+   ========================================================================== */
+@media print {
+  #ambient-canvas, #star-canvas, .glass-blob-layer, #bg-depth-grid,
+  #energy-flow-line, #scroll-progress, #theme-transition-veil,
+  .cursor, .cursor-ring, .dock-wrap,
+  .cmdk-backdrop, #certModal, .contact-watermark, #metaball-canvas,
+  .marquee-wrap, .scroll-indicator, .japan-badge, .deco-lines,
+  .bento-kanji-foil, .horizon-crosshair,
+  .horizon-crosshair-dot, .horizon-readout, .skill-row-evidence {
+    display: none !important;
+  }
+
+  * {
+    background: #fff !important;
+    color: #111 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    text-shadow: none !important;
+  }
+
+  body { font-family: Georgia, 'Times New Roman', serif; }
+  section { padding: 18px 0; page-break-inside: avoid; }
+  .glass-l1, .glass-l2, .glass-l3 { border: 1px solid #ccc !important; }
+  .section-title em, .info-val.accent, .wire-org, .ledger-school, .ledger-pedigree-school { color: #333 !important; }
+  a { text-decoration: underline; color: #111 !important; }
+  .project-tabs, .cert-view-btn, .copy-btn { display: none !important; }
+  .project-panel { display: block !important; }
+  /* NOTE (bug audit): this used to say
+       .experience-grid, .projects-grid, .cert-grid { display: block !important; }
+       .exp-card, .project-card, .cert-card { margin-bottom: 14px; break-inside: avoid; }
+     — all six of those class names belong to an old page design and are
+     not used anywhere in the current HTML, so these rules were silently
+     doing nothing. Replaced with the actual current class names: the
+     wire-timeline (Experience), project-row (Projects), and filmstrip
+     (Certifications, which normally scrolls horizontally on screen and
+     needs converting to a plain stacked list for paper). */
+  .wire-timeline { display: block !important; }
+  .filmstrip-track { display: block !important; white-space: normal !important; overflow: visible !important; }
+  .wire-card, .project-row, .filmstrip-card { margin-bottom: 14px; break-inside: avoid; }
+  .skills-split { display: block !important; }
+  .skill-row { break-inside: avoid; }
+  .spec-ledger, .bento-tile { break-inside: avoid; margin-bottom: 14px; }
+  .spec-ledger { display: block !important; }
+  .bento-grid { display: block !important; }
+  .bento-hero, .bento-tall, .bento-compact, .bento-wide { grid-column: auto; grid-row: auto; }
+  /* Resume "Save as PDF": when the modal is open, print ONLY its content
+     as a plain static document — everything else on the page (including
+     the modal's own backdrop/toolbar) is hidden. Same markup, same data,
+     just re-laid-out for paper instead of screen. */
+  body.resume-modal-open > *:not(#resume-modal) {
+    display: none !important;
+  }
+  body.resume-modal-open #resume-modal {
+    position: static !important; z-index: auto !important;
+    visibility: visible !important; pointer-events: auto !important;
+    display: block !important;
+  }
+  body.resume-modal-open #resume-modal-backdrop,
+  body.resume-modal-open #resume-modal-toolbar {
+    display: none !important;
+  }
+  body.resume-modal-open #resume-modal-panel {
+    position: static !important; max-width: none !important; max-height: none !important;
+    margin: 0 !important; transform: none !important; opacity: 1 !important;
+    border: none !important; box-shadow: none !important; border-radius: 0 !important;
+    overflow: visible !important;
+  }
+  body.resume-modal-open #resume-modal-body { overflow: visible !important; padding: 0 !important; }
+
+  /* Quick Answers uses <details>/<summary> — forcing them open for print
+     needs JS (see main.js's beforeprint/afterprint handler); a pure-CSS
+     override of the closed <details> content isn't reliable across
+     browsers. This just hides the now-irrelevant expand/collapse icon. */
+  .qa-item { break-inside: avoid; }
+  .qa-item summary::after { display: none !important; }
+}
