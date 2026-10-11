@@ -23,13 +23,10 @@ Built entirely in <strong>vanilla HTML, CSS, and JavaScript</strong> - no framew
   <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-8BC34A?style=for-the-badge">
 </p>
 
+<hr>
+
 <p align="center">
-  <a href="https://rahulsahu1221.github.io/rahul-sahu-portfolio/"><strong>Live site</strong></a> ·
-  <a href="#-highlights">Highlights</a> ·
-  <a href="#-quick-start">Quick start</a> ·
-  <a href="#-project-structure">Structure</a> ·
-  <a href="#-customize">Customize</a> ·
-  <a href="#-contact">Contact</a>
+https://rahulsahu-portfolio.vercel.app/
 </p>
 
 <hr>
